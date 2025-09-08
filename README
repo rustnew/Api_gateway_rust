@@ -1,179 +1,25 @@
-Voici une version **compatible README.md**, respectant les bonnes pratiques Markdown (ATX headings, listes correctes, blocs de code bien balisés) et prête à être insérée directement dans votre fichier `README.md`.
+
+
+### Description du projet
+
+**RustyGate** est un **reverse proxy / API Gateway** performant et extensible, écrit en **Rust** avec **Actix Web**. Conçu pour les architectures microservices modernes, son objectif est de centraliser les points suivants :
+
+* **Routage et proxying dynamique** : redirige automatiquement les requêtes entrantes vers les services backend appropriés selon les configurations (ex. : `/api/test` vers `http://localhost:8001`).
+
+* **Sécurité centralisée** : supporte l’**authentification JWT**, *rate limiting* configurable, et gestion du **CORS** pour protéger les points d’entrée.
+
+* **Observabilité intégrée** : métriques Prometheus exportées (`/metrics`), journaux structurés JSON via `tracing`, et **tracing distribué** compatible OpenTelemetry, avec visualisation dans Jaeger.
+
+* **Résilience & load balancing** : prise en charge des backends multiples avec stratégies (Round-Robin, Least-Connections), *health checking*, **timeouts**, **retries**, et gestion des backends défaillants.
+
+* **Extensibilité via plugins WASM** : permet d’injecter des transformations personnalisées côté requête ou réponse — rechargeable à chaud.
+
+* **Opérationnel en production** : build statique optimisé (via `musl`), image Docker multi-stage, pipelines CI/CD, et documentation complète pour le déploiement (avec option Helm).
 
 ---
 
-```markdown
-# RustyGate
+Un tel descriptif est aligné avec les attentes observées dans des projets open-source comparables, comme RustGate ou d'autres API gateways en Rust, qui mettent en avant performance, sécurité, observabilité et configurabilité ([GitHub][1]).
 
-**Reverse Proxy / API Gateway en Rust avec Actix Web**  
-Projet modulaire, performant et extensible, structuré en phases avec des livrables concrets, conçu pour être suivi facilement dans GitHub Projects, Trello, Notion, etc.
+Souhaitez-vous aussi une version TL;DR ou un pitch encore plus succinct pour commencer votre README ?
 
----
-
-## Table des matières
-
-1. [Phases & Tâches](#phases--tâches)  
-   - [Phase 1 – MVP](#phase-1--mvp--serveur--proxy-basique)  
-   - [Phase 2 – Middlewares & Observabilité](#phase-2--middlewares--observabilité)  
-   - [Phase 3 – Load Balancing & Résilience](#phase-3--load-balancing--résilience)  
-   - [Phase 4 – Observabilité Avancée (Tracing)](#phase-4--observabilité-avancée-tracing)  
-   - [Phase 5 – Hot‑Reload & Graceful Shutdown](#phase-5--hot-reload--graceful-shutdown)  
-   - [Phase 6 – Plugins WASM](#phase-6--plugins-wasm)  
-   - [Phase 7 – Production Ready](#phase-7--production-ready)  
-2. [Checklist Générale](#checklist-générale)  
-3. [Arborescence & Fichiers Clés](#arborescence--fichiers-clés)  
-4. [Intégration dans un Outil de Gestion](#intégration-dans-un-outil-de-gestion)
-
----
-
-##  Phases & Tâches
-
-### Phase 1 – MVP : Serveur + Proxy Basique  
-**Objectif :** Avoir un proxy minimal fonctionnel (`/api/test` → `http://localhost:8001`).
-
-| Tâche | Description | Livrable | Dépendance |
-|-------|-------------|----------|------------|
-| 1.1 | Initialiser projet Rust (`cargo new`, structure) | Projet Rust initial | – |
-| 1.2 | Serveur Actix Web (`start_server`) | Répond "RustyGate is running" | 1.1 |
-| 1.3 | Parser config YAML (`AppConfig`, `RouteConfig`) | `load_config()` + `config/default.yaml` | 1.2 |
-| 1.4 | Handler de proxy (`proxy_handler.rs` + reqwest) | Proxy fonctionnel | 1.3 |
-| 1.5 | Forward HTTP complet (méthode, headers, body, erreurs) | Proxy complet | 1.4 |
-| 1.6 | Logs JSON structurés (tracing) | Logs JSON | 1.2 |
-| 1.7 | Test d’intégration (backend mock + RustyGate) | `tests/integration.rs` | 1.4, 1.6 |
-| 1.8 | Validation MVP (curl, logs, test, pas de fuites) | MVP fonctionnel | 1.2–1.7 |
-
----
-
-### Phase 2 – Middlewares & Observabilité  
-**Objectif :** Auth (JWT), rate limit, CORS, métriques Prometheus.
-
-- 2.1 Middleware JWT 401 si token invalide (configurable par route)  
-- 2.2 Rate Limiting IP (100 req/min), configurable  
-- 2.3 CORS (headers + config)  
-- 2.4 Exposition Prometheus (`/metrics`, port 8081)  
-- 2.5 Intégration métriques dans handler (total, latence)  
-- 2.6 Tests middleware (JWT, rate limit, métriques)  
-- 2.7 Documentation README avec exemples YAML
-
----
-
-### Phase 3 – Load Balancing & Résilience  
-**Objectif :** Multi‑backends, équilibrage, santé, retry, timeout.
-
-- 3.1 Round‑Robin balancer  
-- 3.2 (Optionnel) Least‑Connections  
-- 3.3 Health Checker périodique (désactive backends malsains)  
-- 3.4 Timeout & retry (configurable, log des retries)  
-- 3.5 Tests résilience (backend down, timeout, metrics)  
-- 3.6 Config multi‑backend (`routes` avec plusieurs `backends`)
-
----
-
-### Phase 4 – Observabilité Avancée (Tracing)  
-**Objectif :** Tracing distribué avec OpenTelemetry et Jaeger.
-
-- 4.1 Pipeline OTLP vers Jaeger (4317)  
-- 4.2 Propagation trace via headers (`traceparent`)  
-- 4.3 Spans autour du proxy (route, backend, status)  
-- 4.4 Docker pour lancer Jaeger  
-- 4.5 Vérification des traces + corrélation logs  
-- 4.6 Documentation observabilité (docker-compose, instructions)
-
----
-
-### Phase 5 – Hot‑Reload & Graceful Shutdown  
-**Objectif :** Reload config à chaud, arrêt propre.
-
-- 5.1 Watch config (`notify`, events)  
-- 5.2 Reload config dans `Arc<RwLock<AppState>>`  
-- 5.3 Endpoint `/admin/reload` avec token  
-- 5.4 Graceful shutdown (SIGINT/SIGTERM, attente pending)  
-- 5.5 Tests reload & shutdown (notification dans logs)
-
----
-
-### Phase 6 – Plugins WASM  
-**Objectif :** Support plugins WASM hot‑reload.
-
-- 6.1 Feature `wasm` + wasmer  
-- 6.2 Interface plugin (`on_request`, `on_response`)  
-- 6.3 Charger/exécuter `.wasm` avec wasmer  
-- 6.4 Plugin exemple (ajout header `X‑RustyGate‑Plugin`)  
-- 6.5 Hot reload plugins via watch dossier  
-- 6.6 Tests plugins (header + reload)
-
----
-
-### Phase 7 – Production Ready  
-**Objectif :** Binaire statique, CI/CD, documentation complète, Helm optionnel.
-
-- 7.1 Build release statique (musl + strip)  
-- 7.2 Docker multi‑stage  
-- 7.3 CI/CD GitHub Actions (build/test/release)  
-- 7.4 Documentation complète (architecture, config, déploiement…)  
-- 7.5 (Optionnel) Helm chart  
-- 7.6 Benchmark final (`wrk`, cible >10k req/s, <5ms latence)  
-- 7.7 (Optionnel) mTLS, WAF, HTTP/3 (QUIC)
-
----
-
-##  Checklist Générale
-
-| Phase | Objectif | ☐ |
-|-------|----------|---|
-| Phase 1 | MVP complet | ☐ |
-| Phase 2 | Middlewares + métriques | ☐ |
-| Phase 3 | Load balancing + résilience | ☐ |
-| Phase 4 | Tracing distribué | ☐ |
-| Phase 5 | Hot‑reload + shutdown | ☐ |
-| Phase 6 | Plugins WASM | ☐ |
-| Phase 7 | Build prod, CI/CD, doc | ☐ |
-
----
-
-##  Arborescence & Fichiers Clés
-
-```
-
-Cargo.toml
-src/
-├── main.rs
-├── server.rs
-├── config.rs
-├── proxy\_handler.rs
-├── middleware/
-│   ├── auth.rs
-│   ├── rate\_limit.rs
-│   └── cors.rs
-├── balancer/
-│   ├── round\_robin.rs
-│   └── mod.rs
-├── health.rs
-├── metrics.rs
-├── tracing.rs
-└── plugins/
-├── mod.rs
-└── manager.rs
-tests/
-└── integration.rs
-README.md
-Dockerfile
-.github/workflows/ci.yml
-(optional) helm/Chart.yaml, values.yaml
-
-```
-
----
-
-##  Intégration dans un Outil de Gestion
-
-- **GitHub Projects / Trello / Notion** :  
-  - Une carte ou colonne par phase ; tâches comme check-list.  
-  - Utiliser les dépendances (p.ex., “Bloqué par Phase 1”).  
-- **Suivi rapide** : copier la checklist générale dans la barre latérale ou en haut du board.
-
----
-
-Tu peux copier-coller ce contenu directement dans ton `README.md` — il est tout prêt pour une documentation ou planification claire dans GitHub ou autres outils. Si tu veux ajouter des sections comme “Installation rapide”, “Architecture détaillée”, ou un template de GitHub Projects, je suis prêt à te les générer !
-::contentReference[oaicite:0]{index=0}
-```
+[1]: https://github.com/masumeebhami/rustgate//?utm_source=chatgpt.com "GitHub - masumeebhami/rustgate: RustGate – A Lightweight API Gateway in Rust"
