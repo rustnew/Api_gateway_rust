@@ -1,158 +1,179 @@
-Voici un **squelette amélioré pour votre README**, spécifiquement adapté au projet **RustyGate**, structuré, clair et prêt à être intégré dans GitHub Projects, Notion, Trello, etc. Il reprend vos phases, tâches, livrables, dépendances, tout en étant agréable à lire et à copier.
+Voici une version **compatible README.md**, respectant les bonnes pratiques Markdown (ATX headings, listes correctes, blocs de code bien balisés) et prête à être insérée directement dans votre fichier `README.md`.
 
 ---
 
-# RustyGate — Reverse Proxy/API Gateway en Rust avec Actix Web
+```markdown
+# RustyGate
 
-Un projet modulaire et performant, structuré en phases étapes-clés, avec livrables concrets, pour créer un reverse proxy/API gateway complet et extensible.
-
----
-
-## Phases & Tâches
-
-Chaque phase est divisée par composant(s) concernés, avec *tâches*, *livrables* et *dépendances* entre tâches.
+**Reverse Proxy / API Gateway en Rust avec Actix Web**  
+Projet modulaire, performant et extensible, structuré en phases avec des livrables concrets, conçu pour être suivi facilement dans GitHub Projects, Trello, Notion, etc.
 
 ---
 
-### **Phase 1 – MVP : Serveur + Proxy Basique**
+## Table des matières
 
-**Objectif :** Avoir un proxy minimal fonctionnel via `/api/test` → `http://localhost:8001`
-
-| Tâche | Description succincte                                   | Livrable                                  | Dépendance      |
-| ----- | ------------------------------------------------------- | ----------------------------------------- | --------------- |
-| 1.1   | Initialiser projet Rust (cargo new, structure dossiers) | Projet Rust initial                       | –               |
-| 1.2   | Serveur Actix Web de base (`start_server`)              | Serveur qui répond "RustyGate is running" | 1.1             |
-| 1.3   | Parser config YAML (`AppConfig`, `RouteConfig`)         | `load_config()` + `config/default.yaml`   | 1.2             |
-| 1.4   | Handler de proxy (`proxy_handler.rs` avec reqwest)      | Proxy de base fonctionnel                 | 1.3             |
-| 1.5   | Forward HTTP complet : méthode, headers, body, erreurs  | Proxy complet HTTP                        | 1.4             |
-| 1.6   | Logs structurés JSON (via tracing/tracing-actix-web)    | Logs JSON des requêtes                    | 1.2             |
-| 1.7   | Test d’intégration (backend mock + RustyGate)           | `tests/integration.rs`                    | 1.4, 1.6        |
-| 1.8   | MVP validé (curl, logs JSON, test OK, pas de fuite)     | MVP complet prêt                          | check 1.2 – 1.7 |
-
----
-
-### **Phase 2 – Middlewares & Observabilité**
-
-**Objectif :** Ajouter authentification (JWT), rate limit, CORS, métriques Prometheus
-
-* **2.1** Middleware JWT Auth → 401 si token invalide (par route configurée)
-* **2.2** Rate Limiting par IP (100 req/min), configurable
-* **2.3** CORS (headers et config)
-* **2.4** Exposer métriques Prometheus (`/metrics` sur port 8081)
-* **2.5** Intégrer métriques dans handler (total, latence)
-* **2.6** Tests middleware : 401, 429, métriques accessibles
-* **2.7** Mise à jour documentation (README) + exemples YAML
+1. [Phases & Tâches](#phases--tâches)  
+   - [Phase 1 – MVP](#phase-1--mvp--serveur--proxy-basique)  
+   - [Phase 2 – Middlewares & Observabilité](#phase-2--middlewares--observabilité)  
+   - [Phase 3 – Load Balancing & Résilience](#phase-3--load-balancing--résilience)  
+   - [Phase 4 – Observabilité Avancée (Tracing)](#phase-4--observabilité-avancée-tracing)  
+   - [Phase 5 – Hot‑Reload & Graceful Shutdown](#phase-5--hot-reload--graceful-shutdown)  
+   - [Phase 6 – Plugins WASM](#phase-6--plugins-wasm)  
+   - [Phase 7 – Production Ready](#phase-7--production-ready)  
+2. [Checklist Générale](#checklist-générale)  
+3. [Arborescence & Fichiers Clés](#arborescence--fichiers-clés)  
+4. [Intégration dans un Outil de Gestion](#intégration-dans-un-outil-de-gestion)
 
 ---
 
-### **Phase 3 – Load Balancing & Résilience**
+##  Phases & Tâches
 
-**Objectif :** Support multiples backends, équilibrage, santé, retry, timeout
+### Phase 1 – MVP : Serveur + Proxy Basique  
+**Objectif :** Avoir un proxy minimal fonctionnel (`/api/test` → `http://localhost:8001`).
 
-* **3.1** Round‑Robin balancer
-* **3.2** Optionnel : Least‑Connections balancer
-* **3.3** Health checker périodique, désactive backends unhealthy
-* **3.4** Timeout & retry configurables (rety sur autre backend)
-* **3.5** Tests résilience (arrêt backend, timeout, metrics)
-* **3.6** Config multi‑backend (routes avec plusieurs backends)
-
----
-
-### **Phase 4 – Observabilité Avancée (Tracing)**
-
-**Objectif :** Tracing distribué via OpenTelemetry, tracepropagation
-
-* **4.1** Initialiser pipeline OTLP vers Jaeger
-* **4.2** Propagation contexte trace (headers entrée/sortie)
-* **4.3** Créer spans autour du proxy (route, backend, status)
-* **4.4** Script Docker pour lancer Jaeger (UI)
-* **4.5** Vérifier traces dans Jaeger → logs corrélés
-* **4.6** Documenter observabilité (Docker‑Compose + instructions)
+| Tâche | Description | Livrable | Dépendance |
+|-------|-------------|----------|------------|
+| 1.1 | Initialiser projet Rust (`cargo new`, structure) | Projet Rust initial | – |
+| 1.2 | Serveur Actix Web (`start_server`) | Répond "RustyGate is running" | 1.1 |
+| 1.3 | Parser config YAML (`AppConfig`, `RouteConfig`) | `load_config()` + `config/default.yaml` | 1.2 |
+| 1.4 | Handler de proxy (`proxy_handler.rs` + reqwest) | Proxy fonctionnel | 1.3 |
+| 1.5 | Forward HTTP complet (méthode, headers, body, erreurs) | Proxy complet | 1.4 |
+| 1.6 | Logs JSON structurés (tracing) | Logs JSON | 1.2 |
+| 1.7 | Test d’intégration (backend mock + RustyGate) | `tests/integration.rs` | 1.4, 1.6 |
+| 1.8 | Validation MVP (curl, logs, test, pas de fuites) | MVP fonctionnel | 1.2–1.7 |
 
 ---
 
-### **Phase 5 – Hot‑Reload & Graceful Shutdown**
+### Phase 2 – Middlewares & Observabilité  
+**Objectif :** Auth (JWT), rate limit, CORS, métriques Prometheus.
 
-**Objectif :** Reload config sans restart, shutdown propre
-
-* **5.1** Watch config avec `notify`, events via channel
-* **5.2** Recharger config en chaud (RwLock sur AppState)
-* **5.3** Endpoint `/admin/reload` protégé pour reload manuel
-* **5.4** Graceful shutdown (SIGINT/SIGTERM, wait pending, timeout)
-* **5.5** Tests (reload après changement, Ctrl+C logs)
-
----
-
-### **Phase 6 – Plugins WASM**
-
-**Objectif :** Extensibilité via plugins WASM hot-reload
-
-* **6.1** Feature `wasm` avec wasmer
-* **6.2** Interface plugin (`on_request`, `on_response`)
-* **6.3** Charger/instancier `.wasm`, exécuter plugin
-* **6.4** Plugin exemple (ajoute header `X‑RustyGate‑Plugin`)
-* **6.5** Hot reload des plugins via watch dossier
-* **6.6** Tests plugins (header ajouté, reload à chaud)
+- 2.1 Middleware JWT 401 si token invalide (configurable par route)  
+- 2.2 Rate Limiting IP (100 req/min), configurable  
+- 2.3 CORS (headers + config)  
+- 2.4 Exposition Prometheus (`/metrics`, port 8081)  
+- 2.5 Intégration métriques dans handler (total, latence)  
+- 2.6 Tests middleware (JWT, rate limit, métriques)  
+- 2.7 Documentation README avec exemples YAML
 
 ---
 
-### **Phase 7 – Production Ready**
+### Phase 3 – Load Balancing & Résilience  
+**Objectif :** Multi‑backends, équilibrage, santé, retry, timeout.
 
-**Objectif :** Binaire optimisé, CI/CD, documentation complète, Helm (optionnel)
-
-* **7.1** Build release statique avec `musl` + `strip`
-* **7.2** Dockerfile multi-stage
-* **7.3** CI/CD avec GitHub Actions (build, test, release)
-* **7.4** Documentation complète : architecture, config, déploiement, plugins, observabilité, FAQ
-* **7.5** Optionnel : Helm chart pour Kubernetes
-* **7.6** Benchmark final (`wrk` → >10 k req/s, <5 ms latence)
-* **7.7** Options avancées : mTLS, WAF basique, HTTP/3 (QUIC)
+- 3.1 Round‑Robin balancer  
+- 3.2 (Optionnel) Least‑Connections  
+- 3.3 Health Checker périodique (désactive backends malsains)  
+- 3.4 Timeout & retry (configurable, log des retries)  
+- 3.5 Tests résilience (backend down, timeout, metrics)  
+- 3.6 Config multi‑backend (`routes` avec plusieurs `backends`)
 
 ---
 
-## Checklist Générale (pour suivi rapide)
+### Phase 4 – Observabilité Avancée (Tracing)  
+**Objectif :** Tracing distribué avec OpenTelemetry et Jaeger.
 
-| Phase   | Objectif clé                     | Statut (☐ à cocher) |
-| ------- | -------------------------------- | ------------------- |
-| Phase 1 | MVP fonctionnel                  | ☐                   |
-| Phase 2 | JWT, Rate Limit, CORS, métriques | ☐                   |
-| Phase 3 | LB, Health, Retry                | ☐                   |
-| Phase 4 | Tracing OTLP/Jaeger              | ☐                   |
-| Phase 5 | Hot-reload + Shutdown            | ☐                   |
-| Phase 6 | Plugins WASM                     | ☐                   |
-| Phase 7 | Build prod, CI/CD, doc           | ☐                   |
+- 4.1 Pipeline OTLP vers Jaeger (4317)  
+- 4.2 Propagation trace via headers (`traceparent`)  
+- 4.3 Spans autour du proxy (route, backend, status)  
+- 4.4 Docker pour lancer Jaeger  
+- 4.5 Vérification des traces + corrélation logs  
+- 4.6 Documentation observabilité (docker-compose, instructions)
 
 ---
 
-## Arborescence & Fichiers Clés à Générer / Modifier
+### Phase 5 – Hot‑Reload & Graceful Shutdown  
+**Objectif :** Reload config à chaud, arrêt propre.
+
+- 5.1 Watch config (`notify`, events)  
+- 5.2 Reload config dans `Arc<RwLock<AppState>>`  
+- 5.3 Endpoint `/admin/reload` avec token  
+- 5.4 Graceful shutdown (SIGINT/SIGTERM, attente pending)  
+- 5.5 Tests reload & shutdown (notification dans logs)
+
+---
+
+### Phase 6 – Plugins WASM  
+**Objectif :** Support plugins WASM hot‑reload.
+
+- 6.1 Feature `wasm` + wasmer  
+- 6.2 Interface plugin (`on_request`, `on_response`)  
+- 6.3 Charger/exécuter `.wasm` avec wasmer  
+- 6.4 Plugin exemple (ajout header `X‑RustyGate‑Plugin`)  
+- 6.5 Hot reload plugins via watch dossier  
+- 6.6 Tests plugins (header + reload)
+
+---
+
+### Phase 7 – Production Ready  
+**Objectif :** Binaire statique, CI/CD, documentation complète, Helm optionnel.
+
+- 7.1 Build release statique (musl + strip)  
+- 7.2 Docker multi‑stage  
+- 7.3 CI/CD GitHub Actions (build/test/release)  
+- 7.4 Documentation complète (architecture, config, déploiement…)  
+- 7.5 (Optionnel) Helm chart  
+- 7.6 Benchmark final (`wrk`, cible >10k req/s, <5ms latence)  
+- 7.7 (Optionnel) mTLS, WAF, HTTP/3 (QUIC)
+
+---
+
+##  Checklist Générale
+
+| Phase | Objectif | ☐ |
+|-------|----------|---|
+| Phase 1 | MVP complet | ☐ |
+| Phase 2 | Middlewares + métriques | ☐ |
+| Phase 3 | Load balancing + résilience | ☐ |
+| Phase 4 | Tracing distribué | ☐ |
+| Phase 5 | Hot‑reload + shutdown | ☐ |
+| Phase 6 | Plugins WASM | ☐ |
+| Phase 7 | Build prod, CI/CD, doc | ☐ |
+
+---
+
+##  Arborescence & Fichiers Clés
 
 ```
-Cargo.toml — ajouter toutes les dépendances (actix-web, reqwest, tracing, etc.)
-src/main.rs — démarrage serveur
-src/server.rs — setup Actix
-src/config.rs — parsing + reload
-src/proxy_handler.rs — logique de proxying
-src/middleware/auth.rs, rate_limit.rs, cors.rs
-src/balancer/round_robin.rs (± least_conn)
-src/health.rs — health checks
-src/metrics.rs — Prometheus metrics
-src/tracing.rs — OpenTelemetry
-src/plugins/mod.rs, manager.rs
-tests/integration.rs — tests bout en bout
-README.md — documentation complète
-Dockerfile — build prod
-.github/workflows/ci.yml — CI/CD pipeline
-(optional) helm/Chart.yaml + values.yaml — Helm chart
+
+Cargo.toml
+src/
+├── main.rs
+├── server.rs
+├── config.rs
+├── proxy\_handler.rs
+├── middleware/
+│   ├── auth.rs
+│   ├── rate\_limit.rs
+│   └── cors.rs
+├── balancer/
+│   ├── round\_robin.rs
+│   └── mod.rs
+├── health.rs
+├── metrics.rs
+├── tracing.rs
+└── plugins/
+├── mod.rs
+└── manager.rs
+tests/
+└── integration.rs
+README.md
+Dockerfile
+.github/workflows/ci.yml
+(optional) helm/Chart.yaml, values.yaml
+
 ```
 
 ---
 
-## À intégrer dans votre outil de gestion
+##  Intégration dans un Outil de Gestion
 
-* **GitHub Projects** ou **Trello/Notion** : faites 1 carte/liste par phase, avec les tâches comme *checklist*, livrables, stats.
-* Liaison des dépendances — marquez “blocked by Phase X” pour visualiser les enchaînements.
-* Checklist principale en haut ou sidebar pour un coup d’œil rapide.
+- **GitHub Projects / Trello / Notion** :  
+  - Une carte ou colonne par phase ; tâches comme check-list.  
+  - Utiliser les dépendances (p.ex., “Bloqué par Phase 1”).  
+- **Suivi rapide** : copier la checklist générale dans la barre latérale ou en haut du board.
 
 ---
 
-Ce README structuré est prêt à être copié/collé dans votre projet et utilisé comme base de suivi, documentation développeur, et planification. Vous souhaitez qu’on l’enrichisse avec des sections type « installation rapide », « architecture détaillée », ou encore que je vous prépare un template GitHub Projects ?
+Tu peux copier-coller ce contenu directement dans ton `README.md` — il est tout prêt pour une documentation ou planification claire dans GitHub ou autres outils. Si tu veux ajouter des sections comme “Installation rapide”, “Architecture détaillée”, ou un template de GitHub Projects, je suis prêt à te les générer !
+::contentReference[oaicite:0]{index=0}
+```
